@@ -1,48 +1,30 @@
 <!DOCTYPE html>
 <html lang="ms">
 <head>
-  <meta charset="UTF-8" />
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3274439619257410"
+     crossorigin="anonymous"></script>
+<script async src="https://fundingchoicesmessages.google.com/i/pub-3274439619257410?ers=1"></script><script>(function() {function signalGooglefcPresent() {if (!window.frames['googlefcPresent']) {if (document.body) {const iframe = document.createElement('iframe'); iframe.style = 'width: 0; height: 0; border: none; z-index: -1000; left: -1000px; top: -1000px;'; iframe.style.display = 'none'; iframe.name = 'googlefcPresent'; document.body.appendChild(iframe);} else {setTimeout(signalGooglefcPresent, 0);}}}signalGooglefcPresent();})();</script>
+  <meta charset="UTF" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dengar Era FM Live | Radio Malaysia Online</title>
   <meta name="description" content="Dengarkan Era FM secara langsung dalam kualiti terbaik di Radio Malaysia Online. Lagu terkini, hiburan 24/7, dan DJ popular Malaysia.">
   <meta name="keywords" content="Era FM, Radio Malaysia, Dengar radio online, Era FM live, streaming Era FM, radio muzik Malaysia">
   <meta name="author" content="Radio Malaysia Online">
-
-  <!-- Open Graph -->
   <meta property="og:title" content="Dengar Era FM Live | Radio Malaysia Online" />
   <meta property="og:description" content="Stream Era FM secara langsung 24 jam sehari di Radio Malaysia Online. Hiburan dan muzik nonstop!" />
   <meta property="og:image" content="https://radiomalaysia.online/images/era.webp" />
   <meta property="og:url" content="https://radiomalaysia.online/channel/era-fm.html" />
   <meta property="og:type" content="website" />
-
-  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Dengar Era FM Live | Radio Malaysia Online" />
   <meta name="twitter:description" content="Stream Era FM secara langsung 24 jam sehari di Radio Malaysia Online. Hiburan dan muzik nonstop!" />
   <meta name="twitter:image" content="https://radiomalaysia.online/images/era.webp" />
 
-  <!-- Structured Data -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "RadioStation",
-    "name": "Era FM",
-    "url": "https://radiomalaysia.online/channel/era-fm.html",
-    "logo": "https://radiomalaysia.online/images/era.webp",
-    "broadcastFrequency": "103.3 FM",
-    "areaServed": "Malaysia",
-    "sameAs": [
-      "https://www.instagram.com/erafm",
-      "https://www.facebook.com/erafm"
-    ]
-  }
-  </script>
-
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #111;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #121212;
       color: #fff;
       text-align: center;
       padding: 20px;
@@ -60,10 +42,34 @@
       margin: 10px auto 30px;
       line-height: 1.6;
     }
-    audio {
+    .player-container {
+      background: #1e1e1e;
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 500px;
+      margin: 0 auto 40px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.3);
+    }
+    .control-btn {
+      background: #00e676;
+      border: none;
+      color: #000;
+      font-size: 18px;
+      padding: 12px 24px;
+      border-radius: 30px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: 0.3s;
+    }
+    .control-btn:hover {
+      background: #00c853;
+    }
+    canvas {
       width: 100%;
-      max-width: 400px;
-      margin: 20px auto;
+      height: 120px;
+      background-color: #212121;
+      border-radius: 8px;
+      margin-top: 20px;
     }
     footer {
       margin-top: 50px;
@@ -73,16 +79,97 @@
   </style>
 </head>
 <body>
+
   <img src="https://radiomalaysia.online/images/era.webp" alt="Era FM Logo" class="logo">
   <h1>Dengarkan Era FM Live</h1>
-  <p>Era FM menyajikan muzik terkini, hiburan hangat dan celoteh DJ popular Malaysia secara langsung 24/7. Klik butang play di bawah untuk mula mendengar.</p>
+  <p>Tekan butang Play untuk mula dengar siaran langsung Era FM.</p>
 
-  <audio controls autoplay>
-    <source src="https://stream.rcs.revma.com/crec9cmbv4uvv/hls.m3u8" type="audio/mpeg" />
-    Browser anda tidak menyokong pemain audio.
-  </audio>
-  
+  <div class="player-container">
+    <button id="playPauseBtn" class="control-btn">Play</button>
+    <canvas id="dotVisualizer"></canvas>
+  </div>
+
+  <audio id="radio"></audio>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script>
+    const audio = document.getElementById('radio');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const canvas = document.getElementById('dotVisualizer');
+    const ctx = canvas.getContext('2d');
+    const streamUrl = 'https://stream.rcs.revma.com/crec9cmbv4uvv/hls.m3u8';
+
+    let hls, audioCtx, analyser, source, dataArray;
+    let isPlaying = false;
+    let animationId;
+
+    function startStream() {
+      if (!hls && Hls.isSupported()) {
+        hls = new Hls();
+        hls.loadSource(streamUrl);
+        hls.attachMedia(audio);
+      } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+        audio.src = streamUrl;
+      }
+    }
+
+    function setupVisualizer() {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      source = audioCtx.createMediaElementSource(audio);
+      source.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      analyser.fftSize = 64;
+      const bufferLength = analyser.frequencyBinCount;
+      dataArray = new Uint8Array(bufferLength);
+
+      function drawDots() {
+        animationId = requestAnimationFrame(drawDots);
+        analyser.getByteFrequencyData(dataArray);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const radius = 4;
+        const spacing = canvas.width / bufferLength;
+
+        for (let i = 0; i < bufferLength; i++) {
+          const val = dataArray[i];
+          const x = i * spacing + spacing / 2;
+          const y = canvas.height - val / 255 * canvas.height;
+
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = `hsl(${i * 10}, 100%, 60%)`;
+          ctx.fill();
+        }
+      }
+
+      drawDots();
+    }
+
+    function stopVisualizer() {
+      if (animationId) cancelAnimationFrame(animationId);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    playPauseBtn.addEventListener('click', () => {
+      if (!isPlaying) {
+        startStream();
+        audio.play();
+        setupVisualizer();
+        playPauseBtn.textContent = 'Pause';
+        isPlaying = true;
+      } else {
+        audio.pause();
+        stopVisualizer();
+        playPauseBtn.textContent = 'Play';
+        isPlaying = false;
+      }
+    });
+  </script>
 
   <footer>&copy; 2025 Radio Malaysia Online. Semua hak cipta terpelihara.</footer>
+  
+<script src="//instant.page/5.2.0" type="module" integrity="sha384-jnZyxPjiipYXnSU0ygqeac2q7CVYMbh84q0uHVRRxEtvFPiQYbXWUorga2aqZJ0z"></script>	
+<script src="js/anti_copy.js"></script>
 </body>
 </html>
